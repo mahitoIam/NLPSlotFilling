@@ -1,0 +1,139 @@
+
+
+
+
+name: "RNNEncoder" # Model name
+task: "BuyChargeTask" # HotelReservationTask or BuyChargeTask
+seed: 11111
+
+model:
+  layer1:
+    layer: "input" # layer name
+    shape: ${model_params.max_seq_len} # layer param
+  layer2:
+    layer: "TokenAndPositionEmbedding" # layer name
+    vocabulary_size: ${model_params.vocab_size} # layer param
+    sequence_length: ${model_params.max_seq_len} # layer param
+    embedding_dim: ${model_params.embedding_dim} # layer param
+  layer3:
+    layer: "dropout" # layer name
+    rate: 0.2 # layer param
+  layer4:
+    layer: "rnn" # layer name
+    type: "GRU" # RNN type: GRU or LSTM
+    bidirectional: true # layer param
+    num_units: 150 # layer param
+    activation: "elu" # layer param
+    return_sequences: true # layer param
+    use_bias: true # layer param
+    kernel_regularizer: # layer param
+      type: "L2"
+      value: 1e-4
+    recurrent_regularizer: # layer param
+      type: "L2"
+      value: 1e-4
+    bias_regularizer: # layer param
+      type: "L2"
+      value: 1e-4
+    activity_regularizer: # layer param
+      type: "L2"
+      value: 1e-5
+    dropout: 0.1 # layer param
+    recurrent_dropout: 0.1 # layer param
+  layer5:
+    layer: "dense" # layer name
+    activation: "softmax" # layer param
+    dim: 12  # layer param, 12 if data.add_sos_eos = false else 14
+    time_distributed: true # layer param
+
+
+
+model_params:
+  max_seq_len: 45
+  num_words: 250
+  vocab_size: 300 # "num_words" + 50
+  batch_size: 32
+  epochs: 3
+  steps_per_epoch: 5000
+  validation_steps: 3000
+  embedding_dim: 300
+  # for now only Adam optimizer is supported. More optimizers will be added if needed...
+  optimizer:
+    type: "adam"
+    learning_rate: 0.001
+  # for now only categorical_crossentropy loss is supported. More optimizers will be added if needed...
+  loss: "categorical_crossentropy"
+  metrics: ["precision", "recall", "accuracy"]
+
+
+callbacks:
+  ModelCheckpoint:
+    filepath: ./output/model/${name}/model_weights.best.hdf5
+    monitor: "val_loss"
+    verbose: 1
+    save_best_only: True
+    save_weights_only: True
+    mode: "min"
+    save_freq: "epoch"
+
+
+  ReduceLROnPlateau:
+    monitor: "val_loss"
+    factor: 0.8
+    patience: 2
+    verbose: 1
+    mode: "auto"
+    min_delta: 0.0001
+    cooldown: 1
+    min_lr: 0.0001
+
+  TensorBoard:
+    log_dir: ./output/logs/${name}
+    histogram_freq: 0
+    write_graph: true
+    write_images: false
+    write_steps_per_second: false
+    update_freq: "epoch"
+    profile_batch: 0
+    embeddings_freq: 0
+    embeddings_metadata: None
+
+save_model_dir: ./output/model/${name}
+
+
+
+data:
+  # if you are loading data from pickle files, their name must be
+  # train_data.pickle, validation_data.pickle and test_data.pickle if use_test_set is True
+  from: "pickle" # text or pickle
+    # Path of directory where templates.txt or train_task.pickle, validation_task.pickle, and test_task.pickle files are there.
+  data_dir: "./data"
+  save_data_dir: ./output/data_dump/${name}
+  # data split ratio
+  split: 0.2
+  # if true, "2*split" percent of data is taken away for validation and test set and the rest is for train.
+  # else, "split" percent of data is taken away for validation and the rest is for train.
+  use_test_set: false
+  add_sos_eos: false # Add <sos> and <eos> at the beginning and end of sentence
+  augmentation: 0.5 # Augemntation Percent,  set 0 for no augmentation
+  labels: {
+    "PAD": 0,
+    "O": 1,
+    "charge_type": 2,
+    "bnumber": 3,
+    "pnumber": 4,
+    "amount": 5,
+    "operator": 6,
+    "unit": 7,
+    "charge_type_post": 8,
+    "bnumber_post": 9,
+    "pnumber_post": 10,
+    "operator_post": 11,
+    "<sos>": 12,
+    "<eos>": 13}
+
+
+
+
+
+

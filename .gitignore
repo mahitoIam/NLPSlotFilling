@@ -1,0 +1,11 @@
+__pycache__
+__pycache__/
+*.pyc
+.idea
+output/data_dump/*
+output/logs/*
+output/model/*
+output/bakup/*
+test.py
+temp.py
+test.sh
